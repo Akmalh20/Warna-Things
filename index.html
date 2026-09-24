@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuiz Bahasa Cina: Warna + Objek (颜色 + 物品)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Noto+Sans+SC:wght@500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%);
+        }
+        .zh-font {
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+        .animate-bounce-short {
+            animation: bounce 0.6s ease infinite alternate;
+        }
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-8px); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-md py-4 px-4 md:px-8">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <span class="text-4xl">🎨</span>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-wide">Kuiz Bahasa Cina: Warna + Objek</h1>
+                    <p class="text-xs text-teal-100">Fokus 6 Warna Utama: 黄 • 蓝 • 红 • 白 • 黑 • 绿</p>
+                </div>
+            </div>
+            
+            <!-- Scoreboard -->
+            <div class="flex items-center gap-3 bg-teal-900/40 backdrop-blur-md px-5 py-2 rounded-2xl border border-teal-300/30 shadow-inner">
+                <div class="text-center px-2">
+                    <p class="text-[10px] text-teal-200 uppercase font-semibold">Markah</p>
+                    <p id="score-display" class="text-2xl font-black text-yellow-300">0</p>
+                </div>
+                <div class="h-8 w-px bg-teal-400/40"></div>
+                <div class="text-center px-2">
+                    <p class="text-[10px] text-teal-200 uppercase font-semibold">Berturut</p>
+                    <p id="streak-display" class="text-2xl font-black text-emerald-300">0</p>
+                </div>
+                <div class="h-8 w-px bg-teal-400/40"></div>
+                <div class="text-center px-2">
+                    <p class="text-[10px] text-teal-200 uppercase font-semibold">Soalan</p>
+                    <p id="total-display" class="text-2xl font-black text-white">0</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-2xl w-full mx-auto p-4 flex-grow flex flex-col justify-center">
+
+        <!-- Format Selector Options -->
+        <div class="bg-white/90 backdrop-blur-sm p-3 rounded-2xl shadow-sm border border-teal-100 mb-4 flex flex-wrap justify-between items-center gap-2">
+            <span class="text-xs font-bold text-teal-800 flex items-center gap-1">
+                ⚙️ Format Ayat:
+            </span>
+            <div class="flex gap-1.5">
+                <button onclick="setFormat('reduplicated')" id="btn-fmt-rep" class="px-3 py-1.5 text-xs rounded-xl font-bold transition bg-teal-600 text-white shadow">
+                    黄黄的书包 (Huáng huáng de...)
+                </button>
+                <button onclick="setFormat('de')" id="btn-fmt-de" class="px-3 py-1.5 text-xs rounded-xl font-bold transition bg-gray-100 text-gray-700 hover:bg-gray-200">
+                    黄色的书包 (Huáng sè de...)
+                </button>
+                <button onclick="setFormat('simple')" id="btn-fmt-sim" class="px-3 py-1.5 text-xs rounded-xl font-bold transition bg-gray-100 text-gray-700 hover:bg-gray-200">
+                    黄书包 (Huáng shū bāo)
+                </button>
+            </div>
+        </div>
+
+        <!-- Question Card -->
+        <div class="bg-white rounded-3xl shadow-xl border-4 border-teal-200/80 p-6 md:p-8 text-center relative overflow-hidden">
+            
+            <!-- Target Color Badge Header -->
+            <div class="flex justify-center items-center gap-2 mb-4">
+                <span class="text-xs font-bold uppercase tracking-wider text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
+                    Sebutkan Warna & Objek ini:
+                </span>
+            </div>
+
+            <!-- Dynamic SVG Graphic Display (Image matches color perfectly) -->
+            <div class="mb-6 flex flex-col items-center">
+                <div id="svg-container" class="w-44 h-44 md:w-52 md:h-52 p-4 rounded-3xl bg-slate-50 border-2 border-dashed border-gray-200 flex items-center justify-center shadow-inner transition-all duration-300">
+                    <!-- SVG will be rendered here dynamically -->
+                </div>
+                
+                <!-- Object Label with Pinyin & Malay -->
+                <div class="mt-3 flex items-center gap-2">
+                    <span id="object-pinyin-badge" class="text-sm font-bold text-teal-800 bg-teal-100/80 px-3 py-1 rounded-xl">
+                        shū bāo
+                    </span>
+                    <span id="object-meaning-ms" class="text-sm font-semibold text-gray-600 bg-gray-100 px-3 py-1 rounded-xl">
+                        Beg Sekolah
+                    </span>
+                </div>
+            </div>
+
+            <!-- Sentence Template Box -->
+            <div class="bg-emerald-50/60 border-2 border-emerald-200 rounded-2xl p-4 md:p-5 mb-6 relative">
+                
+                <!-- Prompt Mode (Question Blank / Revealed Answer) -->
+                <div id="prompt-display-pinyin" class="text-lg md:text-2xl font-bold text-teal-900 mb-1 tracking-wider">
+                    <!-- Pinyin populated via JS -->
+                </div>
+
+                <div id="prompt-display-hanzi" class="zh-font text-3xl md:text-5xl font-black text-gray-800 tracking-wide">
+                    <!-- Hanzi populated via JS -->
+                </div>
+
+                <!-- Answer Toggle Button -->
+                <button onclick="toggleAnswer()" id="btn-toggle-answer" class="mt-3 text-xs text-teal-700 hover:text-teal-900 underline font-semibold flex items-center justify-center gap-1 mx-auto">
+                    👁️ <span id="toggle-answer-text">Tunjuk Jawapan</span>
+                </button>
+            </div>
+
+            <!-- Audio Pronunciation Button -->
+            <div class="flex justify-center gap-3 mb-6">
+                <button onclick="playAudio()" class="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold px-5 py-2.5 rounded-2xl text-sm shadow-md transition">
+                    🔊 Dengar Sebutan Betul (Audio TTS)
+                </button>
+            </div>
+
+            <hr class="border-gray-200 my-5">
+
+            <!-- Teacher Evaluation Panel -->
+            <div>
+                <p class="text-xs font-bold text-teal-800 uppercase tracking-widest mb-3">
+                    👩‍🏫 Panel Semakan Guru (Klik selepas murid menyebut):
+                </p>
+                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                    <button onclick="markAnswer(true)" class="flex-1 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg text-lg flex items-center justify-center gap-2 transition">
+                        <span>✅</span> Sebutan Betul!
+                    </button>
+                    <button onclick="markAnswer(false)" class="flex-1 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg text-lg flex items-center justify-center gap-2 transition">
+                        <span>❌</span> Cuba Lagi
+                    </button>
+                    <button onclick="nextQuestion()" class="bg-slate-200 hover:bg-slate-300 active:scale-95 text-slate-700 font-bold py-3.5 px-4 rounded-2xl text-sm transition">
+                        ⏭️ Soalan Lain
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-4 text-xs text-teal-800 font-medium">
+        Bahan Pembelajaran Lisan Bahasa Cina • Warna & Objek (颜色与物品)
+    </footer>
+
+    <script>
+        // 1. Strict List of 6 Target Colors
+        const COLORS = [
+            { id: 'huang', hanzi: '黄', pinyin: 'huáng', ms: 'Kuning', hex: '#facc15', strokeHex: '#ca8a04', textClass: 'text-yellow-600' },
+            { id: 'lan',   hanzi: '蓝', pinyin: 'lán',   ms: 'Biru',   hex: '#3b82f6', strokeHex: '#1d4ed8', textClass: 'text-blue-600' },
+            { id: 'hong',  hanzi: '红', pinyin: 'hóng',  ms: 'Merah',  hex: '#ef4444', strokeHex: '#b91c1c', textClass: 'text-red-600' },
+            { id: 'bai',   hanzi: '白', pinyin: 'bái',   ms: 'Putih',  hex: '#ffffff', strokeHex: '#475569', textClass: 'text-slate-600' },
+            { id: 'hei',   hanzi: '黑', pinyin: 'hēi',   ms: 'Hitam',  hex: '#1e293b', strokeHex: '#0f172a', textClass: 'text-gray-900' },
+            { id: 'lu',    hanzi: '绿', pinyin: 'lǜ',    ms: 'Hijau',  hex: '#22c55e', strokeHex: '#15803d', textClass: 'text-green-600' }
+        ];
+
+        // 2. Vocabulary Data Bank with SVG renderers
+        const THINGS = [
+            { id: 'shubao', hanzi: '书包', pinyin: 'shū bāo', ms: 'Beg Sekolah', draw: drawBag },
+            { id: 'qiche',  hanzi: '汽车', pinyin: 'qì chē',  ms: 'Kereta',      draw: drawCar },
+            { id: 'qianbi', hanzi: '铅笔', pinyin: 'qiān bǐ', ms: 'Pensel',      draw: drawPencil },
+            { id: 'qiqiu',  hanzi: '气球', pinyin: 'qì qiú',  ms: 'Belon',       draw: drawBalloon },
+            { id: 'san',    hanzi: '伞',   pinyin: 'sǎn',     ms: 'Payung',      draw: drawUmbrella },
+            { id: 'maozi',  hanzi: '帽子', pinyin: 'mào zi',  ms: 'Topi',        draw: drawCap },
+            { id: 'yifu',   hanzi: '衣服', pinyin: 'yī fu',   ms: 'Baju',        draw: drawShirt },
+            { id: 'xiezi',  hanzi: '鞋子', pinyin: 'xié zi',  ms: 'Kasut',       draw: drawShoe },
+            { id: 'hua',    hanzi: '花',   pinyin: 'huā',     ms: 'Bunga',       draw: drawFlower },
+            { id: 'pingguo',hanzi: '苹果', pinyin: 'píng guǒ',ms: 'Epal',        draw: drawApple },
+            { id: 'qiu',    hanzi: '球',   pinyin: 'qiú',     ms: 'Bola',        draw: drawBall },
+            { id: 'zixingche', hanzi: '自行车', pinyin: 'zì xíng chē', ms: 'Basikal', draw: drawBicycle },
+            { id: 'beizi',  hanzi: '杯子', pinyin: 'bēi zi',  ms: 'Cawan',       draw: drawCup },
+            { id: 'dangao', hanzi: '蛋糕', pinyin: 'dàn gāo', ms: 'Kek',         draw: drawCake },
+            { id: 'zhong',  hanzi: '钟',   pinyin: 'zhōng',   ms: 'Jam',         draw: drawClock },
+            { id: 'liwu',   hanzi: '礼物', pinyin: 'lǐ wù',   ms: 'Hadiah',      draw: drawGift },
+            { id: 'yu',     hanzi: '鱼',   pinyin: 'yú',      ms: 'Ikan',        draw: drawFish },
+            { id: 'xingxing',hanzi: '星星', pinyin: 'xīng xing',ms: 'Bintang',   draw: drawStar },
+            { id: 'yezi',   hanzi: '叶子', pinyin: 'yè zi',   ms: 'Daun',        draw: drawLeaf },
+            { id: 'fangzi', hanzi: '房子', pinyin: 'fáng zi', ms: 'Rumah',       draw: drawHouse },
+            { id: 'chizi',  hanzi: '尺子', pinyin: 'chǐ zi',  ms: 'Pembaris',    draw: drawRuler },
+            { id: 'xiangpi',hanzi: '橡皮', pinyin: 'xiàng pí',ms: 'Pemadam',     draw: drawEraser },
+            { id: 'shuiping',hanzi:'水瓶', pinyin: 'shuǐ píng',ms: 'Botol Air',  draw: drawBottle },
+            { id: 'yanjing',hanzi: '眼镜', pinyin: 'yǎn jìng',ms: 'Cermin Mata', draw: drawGlasses },
+            { id: 'kuzi',   hanzi: '裤子', pinyin: 'kù zi',   ms: 'Seluar',      draw: drawPants },
+            { id: 'chuan',  hanzi: '船',   pinyin: 'chuán',   ms: 'Kapal',       draw: drawBoat },
+            { id: 'fengzheng',hanzi:'风筝',pinyin: 'fēng zheng',ms: 'Layang-layang', draw: drawKite }
+        ];
+
+        // Dynamic SVG Generators (All images accept the color hex directly)
+        function drawBag(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <!-- Handle -->
+                <path d="M 38 35 A 12 12 0 0 1 62 35" fill="none" stroke="${stroke}" stroke-width="5" stroke-linecap="round"/>
+                <!-- Main Body -->
+                <rect x="22" y="32" width="56" height="52" rx="12" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <!-- Front Pocket -->
+                <rect x="30" y="55" width="40" height="22" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="3.5" filter="brightness(0.92)"/>
+                <!-- Zipper line -->
+                <line x1="30" y1="52" x2="70" y2="52" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/>
+            </svg>`;
+        }
+
+        function drawCar(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <!-- Roof & Body -->
+                <path d="M 15 62 L 25 42 Q 32 30 50 30 Q 68 30 75 42 L 85 62 Z" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>
+                <rect x="10" y="55" width="80" height="20" rx="8" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <!-- Windows -->
+                <path d="M 28 44 Q 32 35 47 35 L 47 52 L 23 52 Z" fill="#e0f2fe" stroke="${stroke}" stroke-width="3"/>
+                <path d="M 72 44 Q 68 35 53 35 L 53 52 L 77 52 Z" fill="#e0f2fe" stroke="${stroke}" stroke-width="3"/>
+                <!-- Wheels -->
+                <circle cx="28" cy="75" r="10" fill="#334155" stroke="${stroke}" stroke-width="3"/>
+                <circle cx="28" cy="75" r="4" fill="#ffffff"/>
+                <circle cx="72" cy="75" r="10" fill="#334155" stroke="${stroke}" stroke-width="3"/>
+                <circle cx="72" cy="75" r="4" fill="#ffffff"/>
+            </svg>`;
+        }
+
+        function drawPencil(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <!-- Body -->
+                <polygon points="30,20 70,20 70,68 30,68" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>
+                <!-- Eraser top -->
+                <rect x="30" y="10" width="40" height="12" rx="3" fill="#f43f5e" stroke="${stroke}" stroke-width="3"/>
+                <!-- Tip -->
+                <polygon points="30,68 70,68 50,92" fill="#fde047" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+                <!-- Lead -->
+                <polygon points="43,84 57,84 50,92" fill="#1e293b"/>
+                <!-- Stripe detailing -->
+                <line x1="43" y1="20" x2="43" y2="68" stroke="${stroke}" stroke-width="2.5"/>
+                <line x1="57" y1="20" x2="57" y2="68" stroke="${stroke}" stroke-width="2.5"/>
+            </svg>`;
+        }
+
+        function drawBalloon(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <!-- Balloon -->
+                <ellipse cx="50" cy="42" rx="32" ry="38" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <!-- Tie knot -->
+                <polygon points="46,80 54,80 50,76" fill="${fill}" stroke="${stroke}" stroke-width="3"/>
+                <!-- String -->
+                <path d="M 50 80 Q 42 88 52 96" fill="none" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/>
+                <!-- Highlight -->
+                <ellipse cx="38" cy="28" rx="6" ry="12" fill="#ffffff" opacity="0.4" transform="rotate(-25 38 28)"/>
+            </svg>`;
+        }
+
+        function drawUmbrella(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <!-- Canopy -->
+                <path d="M 10 58 Q 50 12 90 58 Q 70 52 50 58 Q 30 52 10 58 Z" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>
+                <!-- Handle Pole -->
+                <path d="M 50 58 L 50 82 Q 50 92 40 90" fill="none" stroke="${stroke}" stroke-width="4" stroke-linecap="round"/>
+                <!-- Top Tip -->
+                <line x1="50" y1="18" x2="50" y2="12" stroke="${stroke}" stroke-width="4" stroke-linecap="round"/>
+            </svg>`;
+        }
+
+        function drawCap(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <!-- Visor -->
+                <path d="M 45 62 Q 78 62 92 70 Q 60 76 35 72 Z" fill="${fill}" stroke="${stroke}" stroke-width="4" filter="brightness(0.85)"/>
+                <!-- Dome -->
+                <path d="M 18 64 Q 20 28 52 28 Q 80 28 82 64 Z" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <!-- Top Button -->
+                <circle cx="50" cy="27" r="5" fill="${stroke}"/>
+            </svg>`;
+        }
+
+        function drawShirt(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <!-- Main T-Shirt Body -->
+                <path d="M 30 28 L 12 38 L 22 55 L 30 48 L 30 85 L 70 85 L 70 48 L 78 55 L 88 38 L 70 28 Q 50 36 30 28 Z" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>
+                <!-- Collar -->
+                <path d="M 38 28 Q 50 38 62 28" fill="none" stroke="${stroke}" stroke-width="3.5"/>
+            </svg>`;
+        }
+
+        function drawShoe(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <!-- Shoe Body -->
+                <path d="M 18 55 Q 22 38 42 38 L 52 50 L 85 50 Q 92 65 88 75 L 18 75 Z" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>
+                <!-- Sole -->
+                <rect x="15" y="75" width="75" height="10" rx="3" fill="#ffffff" stroke="${stroke}" stroke-width="3.5"/>
+                <!-- Laces -->
+                <line x1="38" y1="46" x2="48" y2="44" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="36" y1="52" x2="48" y2="50" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/>
+            </svg>`;
+        }
+
+        function drawFlower(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <!-- Stem & Leaf -->
+                <path d="M 50 55 Q 45 75 50 90" fill="none" stroke="#16a34a" stroke-width="5" stroke-linecap="round"/>
+                <path d="M 50 72 Q 68 65 65 78 Z" fill="#22c55e" stroke="#15803d" stroke-width="3"/>
+                <!-- Petals (Fill with target color) -->
+                <circle cx="50" cy="30" r="14" fill="${fill}" stroke="${stroke}" stroke-width="3"/>
+                <circle cx="68" cy="42" r="14" fill="${fill}" stroke="${stroke}" stroke-width="3"/>
+                <circle cx="60" cy="60" r="14" fill="${fill}" stroke="${stroke}" stroke-width="3"/>
+                <circle cx="40" cy="60" r="14" fill="${fill}" stroke="${stroke}" stroke-width="3"/>
+                <circle cx="32" cy="42" r="14" fill="${fill}" stroke="${stroke}" stroke-width="3"/>
+                <!-- Center -->
+                <circle cx="50" cy="46" r="12" fill="#facc15" stroke="${stroke}" stroke-width="3"/>
+            </svg>`;
+        }
+
+        function drawApple(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <!-- Stem & Leaf -->
+                <path d="M 50 30 Q 55 18 62 16" fill="none" stroke="#78350f" stroke-width="4" stroke-linecap="round"/>
+                <path d="M 52 24 Q 68 18 62 30 Z" fill="#22c55e" stroke="#15803d" stroke-width="2.5"/>
+                <!-- Body -->
+                <path d="M 50 32 Q 20 25 20 56 Q 20 85 45 88 Q 50 85 55 88 Q 80 85 80 56 Q 80 25 50 32 Z" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>
+                <!-- Highlight -->
+                <ellipse cx="34" cy="44" rx="4" ry="9" fill="#ffffff" opacity="0.4" transform="rotate(-20 34 44)"/>
+            </svg>`;
+        }
+
+        function drawBall(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <circle cx="50" cy="50" r="38" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <path d="M 20 32 Q 50 50 20 68" fill="none" stroke="${stroke}" stroke-width="3.5"/>
+                <path d="M 80 32 Q 50 50 80 68" fill="none" stroke="${stroke}" stroke-width="3.5"/>
+                <line x1="12" y1="50" x2="88" y2="50" stroke="${stroke}" stroke-width="3.5"/>
+            </svg>`;
+        }
+
+        function drawBicycle(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <!-- Wheels -->
+                <circle cx="26" cy="65" r="18" fill="none" stroke="#334155" stroke-width="4"/>
+                <circle cx="74" cy="65" r="18" fill="none" stroke="#334155" stroke-width="4"/>
+                <!-- Bicycle Frame (Colored) -->
+                <path d="M 26 65 L 45 65 L 58 45 L 36 45 Z" fill="none" stroke="${fill}" stroke-width="5" stroke-linejoin="round"/>
+                <path d="M 45 65 L 55 35 L 74 65" fill="none" stroke="${fill}" stroke-width="5" stroke-linejoin="round"/>
+                <line x1="55" y1="35" x2="68" y2="35" stroke="${stroke}" stroke-width="4" stroke-linecap="round"/>
+                <!-- Seat -->
+                <line x1="33" y1="42" x2="43" y2="42" stroke="${stroke}" stroke-width="5" stroke-linecap="round"/>
+            </svg>`;
+        }
+
+        function drawCup(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <path d="M 68 35 C 85 35 85 65 68 65" fill="none" stroke="${stroke}" stroke-width="5" stroke-linecap="round"/>
+                <rect x="25" y="25" width="45" height="50" rx="8" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <path d="M 38 18 Q 42 12 38 8 M 52 18 Q 56 12 52 8" fill="none" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/>
+            </svg>`;
+        }
+
+        function drawCake(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <rect x="47" y="15" width="6" height="15" fill="#facc15" stroke="${stroke}" stroke-width="2"/>
+                <ellipse cx="50" cy="11" rx="3" ry="5" fill="#ef4444"/>
+                <rect x="25" y="30" width="50" height="22" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <rect x="15" y="52" width="70" height="30" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <path d="M 15 52 Q 22 60 30 52 Q 38 60 46 52 Q 54 60 62 52 Q 70 60 78 52 Q 85 60 85 52" fill="none" stroke="#ffffff" stroke-width="4"/>
+            </svg>`;
+        }
+
+        function drawClock(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <circle cx="50" cy="50" r="38" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <circle cx="50" cy="50" r="28" fill="#ffffff" stroke="${stroke}" stroke-width="3"/>
+                <line x1="50" y1="50" x2="50" y2="30" stroke="${stroke}" stroke-width="4" stroke-linecap="round"/>
+                <line x1="50" y1="50" x2="65" y2="50" stroke="${stroke}" stroke-width="4" stroke-linecap="round"/>
+                <circle cx="50" cy="50" r="3" fill="${stroke}"/>
+            </svg>`;
+        }
+
+        function drawGift(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <rect x="20" y="40" width="60" height="45" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <rect x="15" y="30" width="70" height="15" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <rect x="44" y="30" width="12" height="55" fill="#facc15" stroke="${stroke}" stroke-width="2"/>
+                <path d="M 50 30 Q 30 15 42 22 Q 50 28 50 30 Z" fill="#facc15" stroke="${stroke}" stroke-width="2"/>
+                <path d="M 50 30 Q 70 15 58 22 Q 50 28 50 30 Z" fill="#facc15" stroke="${stroke}" stroke-width="2"/>
+            </svg>`;
+        }
+
+        function drawFish(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <polygon points="75,50 92,30 92,70" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>
+                <ellipse cx="45" cy="50" rx="32" ry="24" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <circle cx="28" cy="45" r="4" fill="#ffffff" stroke="${stroke}" stroke-width="2"/>
+                <circle cx="27" cy="45" r="2" fill="#000000"/>
+                <path d="M 45 40 Q 55 25 35 30" fill="${fill}" stroke="${stroke}" stroke-width="3"/>
+            </svg>`;
+        }
+
+        function drawStar(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <polygon points="50,10 62,38 92,38 68,56 77,85 50,67 23,85 32,56 8,38 38,38" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>
+            </svg>`;
+        }
+
+        function drawLeaf(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <path d="M 20 80 Q 20 20 80 20 Q 80 80 20 80 Z" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>
+                <line x1="20" y1="80" x2="80" y2="20" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/>
+                <line x1="42" y1="58" x2="52" y2="66" stroke="${stroke}" stroke-width="2.5"/>
+                <line x1="58" y1="42" x2="68" y2="50" stroke="${stroke}" stroke-width="2.5"/>
+            </svg>`;
+        }
+
+        function drawHouse(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <rect x="22" y="45" width="56" height="42" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <polygon points="50,15 12,48 88,48" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round" filter="brightness(0.9)"/>
+                <rect x="42" y="62" width="16" height="25" rx="3" fill="#ffffff" stroke="${stroke}" stroke-width="3"/>
+                <rect x="28" y="55" width="10" height="10" rx="2" fill="#e0f2fe" stroke="${stroke}" stroke-width="2"/>
+                <rect x="62" y="55" width="10" height="10" rx="2" fill="#e0f2fe" stroke="${stroke}" stroke-width="2"/>
+            </svg>`;
+        }
+
+        function drawRuler(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <rect x="15" y="35" width="70" height="30" rx="5" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <line x1="25" y1="35" x2="25" y2="48" stroke="${stroke}" stroke-width="3"/>
+                <line x1="35" y1="35" x2="35" y2="44" stroke="${stroke}" stroke-width="2.5"/>
+                <line x1="45" y1="35" x2="45" y2="48" stroke="${stroke}" stroke-width="3"/>
+                <line x1="55" y1="35" x2="55" y2="44" stroke="${stroke}" stroke-width="2.5"/>
+                <line x1="65" y1="35" x2="65" y2="48" stroke="${stroke}" stroke-width="3"/>
+                <line x1="75" y1="35" x2="75" y2="44" stroke="${stroke}" stroke-width="2.5"/>
+            </svg>`;
+        }
+
+        function drawEraser(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <polygon points="20,40 60,20 85,50 45,70" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>
+                <polygon points="35,55 60,20 85,50 60,85" fill="#f87171" stroke="${stroke}" stroke-width="3" stroke-linejoin="round" opacity="0.3"/>
+            </svg>`;
+        }
+
+        function drawBottle(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <rect x="42" y="12" width="16" height="10" rx="3" fill="#334155" stroke="${stroke}" stroke-width="3"/>
+                <rect x="44" y="22" width="12" height="10" fill="${fill}" stroke="${stroke}" stroke-width="3"/>
+                <rect x="30" y="32" width="40" height="56" rx="10" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <rect x="30" y="50" width="40" height="18" fill="#ffffff" opacity="0.8" stroke="${stroke}" stroke-width="2"/>
+            </svg>`;
+        }
+
+        function drawGlasses(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <rect x="12" y="38" width="32" height="28" rx="8" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <rect x="56" y="38" width="32" height="28" rx="8" fill="${fill}" stroke="${stroke}" stroke-width="4"/>
+                <path d="M 44 48 Q 50 42 56 48" fill="none" stroke="${stroke}" stroke-width="4" stroke-linecap="round"/>
+                <line x1="12" y1="44" x2="4" y2="38" stroke="${stroke}" stroke-width="4" stroke-linecap="round"/>
+                <line x1="88" y1="44" x2="96" y2="38" stroke="${stroke}" stroke-width="4" stroke-linecap="round"/>
+            </svg>`;
+        }
+
+        function drawPants(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <path d="M 28 20 L 72 20 L 78 85 L 54 85 L 50 48 L 46 85 L 22 85 Z" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>
+                <line x1="28" y1="28" x2="72" y2="28" stroke="${stroke}" stroke-width="3"/>
+            </svg>`;
+        }
+
+        function drawBoat(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <path d="M 15 58 L 85 58 L 72 82 L 28 82 Z" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>
+                <line x1="50" y1="18" x2="50" y2="58" stroke="${stroke}" stroke-width="4"/>
+                <polygon points="50,18 78,48 50,48" fill="#ffffff" stroke="${stroke}" stroke-width="3"/>
+            </svg>`;
+        }
+
+        function drawKite(fill, stroke) {
+            return `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                <polygon points="50,12 80,45 50,82 20,45" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>
+                <line x1="50" y1="12" x2="50" y2="82" stroke="${stroke}" stroke-width="2.5"/>
+                <line x1="20" y1="45" x2="80" y2="45" stroke="${stroke}" stroke-width="2.5"/>
+                <path d="M 50 82 Q 40 90 55 96" fill="none" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/>
+            </svg>`;
+        }
+
+        // 3. Application State Variables
+        let currentQuestion = {};
+        let currentFormat = 'reduplicated'; // 'reduplicated' (e.g. 黄黄的书包), 'de', 'simple'
+        let showAnswerState = false;
+        let score = 0;
+        let streak = 0;
+        let totalCount = 0;
+
+        const synth = window.speechSynthesis;
+
+        function setFormat(fmt) {
+            currentFormat = fmt;
+            
+            // Highlight format buttons
+            document.getElementById('btn-fmt-rep').className = fmt === 'reduplicated' ? 'px-3 py-1.5 text-xs rounded-xl font-bold transition bg-teal-600 text-white shadow' : 'px-3 py-1.5 text-xs rounded-xl font-bold transition bg-gray-100 text-gray-700 hover:bg-gray-200';
+            document.getElementById('btn-fmt-de').className = fmt === 'de' ? 'px-3 py-1.5 text-xs rounded-xl font-bold transition bg-teal-600 text-white shadow' : 'px-3 py-1.5 text-xs rounded-xl font-bold transition bg-gray-100 text-gray-700 hover:bg-gray-200';
+            document.getElementById('btn-fmt-sim').className = fmt === 'simple' ? 'px-3 py-1.5 text-xs rounded-xl font-bold transition bg-teal-600 text-white shadow' : 'px-3 py-1.5 text-xs rounded-xl font-bold transition bg-gray-100 text-gray-700 hover:bg-gray-200';
+
+            renderQuestionDisplay();
+        }
+
+        function generateQuestion() {
+            const randomColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+            const randomThing = THINGS[Math.floor(Math.random() * THINGS.length)];
+            
+            currentQuestion = {
+                color: randomColor,
+                thing: randomThing
+            };
+
+            showAnswerState = false;
+            renderQuestionDisplay();
+        }
+
+        function renderQuestionDisplay() {
+            const color = currentQuestion.color;
+            const thing = currentQuestion.thing;
+
+            // 1. Render Graphic SVG dynamically filled with target color
+            const svgContainer = document.getElementById('svg-container');
+            svgContainer.innerHTML = thing.draw(color.hex, color.strokeHex);
+
+            // 2. Set Object Badge Labels
+            document.getElementById('object-pinyin-badge').innerText = thing.pinyin;
+            document.getElementById('object-meaning-ms').innerText = `${thing.ms}`;
+
+            // 3. Build Text Format Strings
+            let fullPinyin = '';
+            let fullHanzi = '';
+
+            let blankPinyin = '';
+            let blankHanzi = '';
+
+            if (currentFormat === 'reduplicated') { // e.g., 黄黄的书包
+                fullPinyin = `<span class="${color.textClass}">${color.pinyin} ${color.pinyin}</span> de ${thing.pinyin}`;
+                fullHanzi = `<span class="${color.textClass}">${color.hanzi}${color.hanzi}</span>的${thing.hanzi}`;
+                
+                blankPinyin = `<span class="text-rose-500 font-black underline stroke-teal-700"> [ ? ] [ ? ] </span> de ${thing.pinyin}`;
+                blankHanzi = `<span class="text-rose-500 border-b-4 border-dashed border-rose-400 px-2">❓❓</span>的${thing.hanzi}`;
+            } else if (currentFormat === 'de') { // e.g., 黄色的书包
+                fullPinyin = `<span class="${color.textClass}">${color.pinyin} sè</span> de ${thing.pinyin}`;
+                fullHanzi = `<span class="${color.textClass}">${color.hanzi}色</span>的${thing.hanzi}`;
+
+                blankPinyin = `<span class="text-rose-500 font-black underline stroke-teal-700"> [ ? ] sè </span> de ${thing.pinyin}`;
+                blankHanzi = `<span class="text-rose-500 border-b-4 border-dashed border-rose-400 px-2">❓色</span>的${thing.hanzi}`;
+            } else { // simple: e.g., 黄书包
+                fullPinyin = `<span class="${color.textClass}">${color.pinyin}</span> ${thing.pinyin}`;
+                fullHanzi = `<span class="${color.textClass}">${color.hanzi}</span>${thing.hanzi}`;
+
+                blankPinyin = `<span class="text-rose-500 font-black underline stroke-teal-700"> [ ? ] </span> ${thing.pinyin}`;
+                blankHanzi = `<span class="text-rose-500 border-b-4 border-dashed border-rose-400 px-2">❓</span>${thing.hanzi}`;
+            }
+
+            // Render Prompt or Answer
+            const pinyinEl = document.getElementById('prompt-display-pinyin');
+            const hanziEl = document.getElementById('prompt-display-hanzi');
+            const toggleBtnText = document.getElementById('toggle-answer-text');
+
+            if (showAnswerState) {
+                pinyinEl.innerHTML = fullPinyin;
+                hanziEl.innerHTML = fullHanzi;
+                toggleBtnText.innerText = 'Sembunyi Jawapan';
+            } else {
+                pinyinEl.innerHTML = blankPinyin;
+                hanziEl.innerHTML = blankHanzi;
+                toggleBtnText.innerText = 'Tunjuk Jawapan';
+            }
+        }
+
+        function toggleAnswer() {
+            showAnswerState = !showAnswerState;
+            renderQuestionDisplay();
+        }
+
+        function getChineseTextToSpeak() {
+            const color = currentQuestion.color.hanzi;
+            const thing = currentQuestion.thing.hanzi;
+
+            if (currentFormat === 'reduplicated') {
+                return `${color}${color}的${thing}`;
+            } else if (currentFormat === 'de') {
+                return `${color}色的${thing}`;
+            } else {
+                return `${color}${thing}`;
+            }
+        }
+
+        function playAudio() {
+            if (!('speechSynthesis' in window)) {
+                return;
+            }
+
+            // Always reveal answer when audio is played
+            showAnswerState = true;
+            renderQuestionDisplay();
+
+            const textToSpeak = getChineseTextToSpeak();
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.75; // Clear speed for primary students
+
+            synth.cancel(); // Stop active speech
+            synth.speak(utterance);
+        }
+
+        function markAnswer(isCorrect) {
+            totalCount++;
+
+            if (isCorrect) {
+                score += 10;
+                streak++;
+                
+                // Show answer on correct
+                showAnswerState = true;
+                renderQuestionDisplay();
+
+                // Play celebratory confetti
+                confetti({
+                    particleCount: 60,
+                    spread: 70,
+                    origin: { y: 0.7 }
+                });
+
+                // Auto speak pronunciation
+                playAudio();
+
+                setTimeout(() => {
+                    generateQuestion();
+                }, 1600);
+
+            } else {
+                streak = 0;
+                // Reveal answer for teacher explanation
+                showAnswerState = true;
+                renderQuestionDisplay();
+                playAudio();
+            }
+
+            // Update Scoreboard UI
+            document.getElementById('score-display').innerText = score;
+            document.getElementById('streak-display').innerText = streak;
+            document.getElementById('total-display').innerText = totalCount;
+        }
+
+        function nextQuestion() {
+            generateQuestion();
+        }
+
+        // Initialize App on Window Load
+        window.onload = function() {
+            generateQuestion();
+        };
+    </script>
+</body>
+</html>
